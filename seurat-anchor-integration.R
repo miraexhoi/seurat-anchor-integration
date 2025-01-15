@@ -92,3 +92,17 @@ ifnb <- SCTransform(ifnb)
 ifnb <- RunPCA(ifnb)
 ifnb <- RunUMAP(ifnb, dims = 1:30)
 DimPlot(ifnb, reduction = "umap", group.by = c("stim", "seurat_annotations"))
+
+# integrate datasets
+ifnb <- IntegrateLayers(object = ifnb, method = CCAIntegration, normalization.method = "SCT", verbose = F)
+ifnb <- FindNeighbors(ifnb, reduction = "integrated.dr", dims = 1:30)
+ifnb <- FindClusters(ifnb, resolution = 0.6)
+
+ifnb <- RunUMAP(ifnb, dims = 1:30, reduction = "integrated.dr")
+DimPlot(ifnb, reduction = "umap", group.by = c("stim", "seurat_annotations"))
+
+# perform differential expression
+ifnb <- PrepSCTFindMarkers(ifnb)
+ifnb$celltype.stim <- paste(ifnb$seurat_annotations, ifnb$stim, sep = "_")
+Idents(ifnb) <- "celltype.stim"
+b.interferon.response <- FindMarkers(ifnb, ident.1 = "B_STIM", ident.2 = "B_CTRL", verbose = FALSE)
